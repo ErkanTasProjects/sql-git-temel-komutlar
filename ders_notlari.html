@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ders Notlarım — SQL / Git / Genel Kavramlar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0d1117;
+    --panel: #10151c;
+    --card: #161c26;
+    --card-hover: #1b2230;
+    --border: #262e3a;
+    --border-soft: #1d232e;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --text-faint: #5b6472;
+    --sql: #58a6ff;
+    --sql-dim: #1c3a5e;
+    --git: #ef9f27;
+    --git-dim: #4a3512;
+    --genel: #bc8cff;
+    --genel-dim: #3a2c5e;
+    --done: #3fb950;
+    --done-dim: #16321c;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:920px;margin:0 auto;padding:0 0 4rem;}
+
+  /* ---- header / editor chrome ---- */
+  .titlebar{
+    display:flex;align-items:center;gap:8px;
+    padding:14px 20px;border-bottom:1px solid var(--border);
+    background:var(--panel);
+  }
+  .dot{width:11px;height:11px;border-radius:50%;}
+  .dot.r{background:#ff5f56;}.dot.y{background:#ffbd2e;}.dot.g{background:#27c93f;}
+  .titlebar .filename{
+    margin-left:10px;font-family:var(--mono);font-size:13px;color:var(--text-dim);
+  }
+
+  .tabbar{
+    display:flex;background:var(--panel);border-bottom:1px solid var(--border);
+    overflow-x:auto;
+  }
+  .tab{
+    display:flex;align-items:center;gap:8px;
+    padding:12px 18px;font-family:var(--mono);font-size:13px;
+    color:var(--text-faint);cursor:pointer;white-space:nowrap;
+    border-right:1px solid var(--border-soft);
+    border-bottom:2px solid transparent;
+    background:transparent;
+    transition:color .15s, background .15s;
+  }
+  .tab:hover{color:var(--text-dim);background:rgba(255,255,255,0.02);}
+  .tab .tab-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .tab[data-cat="sql"] .tab-dot{background:var(--sql);}
+  .tab[data-cat="git"] .tab-dot{background:var(--git);}
+  .tab[data-cat="genel"] .tab-dot{background:var(--genel);}
+  .tab.active{color:var(--text);background:var(--bg);}
+  .tab.active[data-cat="sql"]{border-bottom-color:var(--sql);}
+  .tab.active[data-cat="git"]{border-bottom-color:var(--git);}
+  .tab.active[data-cat="genel"]{border-bottom-color:var(--genel);}
+  .tab .tab-count{font-size:11px;color:var(--text-faint);}
+
+  /* ---- toolbar ---- */
+  .toolbar{
+    display:flex;gap:12px;align-items:center;
+    padding:16px 20px;flex-wrap:wrap;
+  }
+  .search-wrap{flex:1;min-width:200px;position:relative;}
+  .search-wrap input{
+    width:100%;background:var(--card);border:1px solid var(--border);
+    color:var(--text);padding:9px 12px 9px 34px;border-radius:8px;
+    font-family:var(--sans);font-size:14px;outline:none;
+  }
+  .search-wrap input:focus{border-color:var(--text-faint);}
+  .search-wrap input::placeholder{color:var(--text-faint);}
+  .search-icon{
+    position:absolute;left:11px;top:50%;transform:translateY(-50%);
+    color:var(--text-faint);font-size:14px;
+  }
+  .toolbar-btn{
+    background:var(--card);border:1px solid var(--border);color:var(--text-dim);
+    padding:9px 14px;border-radius:8px;font-family:var(--sans);font-size:13px;
+    cursor:pointer;white-space:nowrap;
+  }
+  .toolbar-btn:hover{background:var(--card-hover);color:var(--text);}
+
+  /* ---- progress ---- */
+  .progress-block{padding:0 20px 4px;}
+  .progress-label{
+    display:flex;justify-content:space-between;font-size:12px;
+    color:var(--text-dim);margin-bottom:6px;font-family:var(--mono);
+  }
+  .progress-track{
+    height:6px;background:var(--border-soft);border-radius:4px;overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;border-radius:4px;transition:width .3s ease;
+  }
+  .progress-fill[data-cat="sql"]{background:var(--sql);}
+  .progress-fill[data-cat="git"]{background:var(--git);}
+  .progress-fill[data-cat="genel"]{background:var(--genel);}
+
+  /* ---- section groups ---- */
+  .group-title{
+    margin:26px 20px 10px;font-family:var(--mono);font-size:12px;
+    color:var(--text-faint);letter-spacing:.06em;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;
+  }
+  .group-title::after{content:"";flex:1;height:1px;background:var(--border-soft);}
+
+  .list{padding:0 20px;display:flex;flex-direction:column;gap:8px;}
+
+  .item{
+    background:var(--card);border:1px solid var(--border);border-radius:10px;
+    overflow:hidden;
+  }
+  .item.done{border-color:var(--done-dim);}
+  .item-head{
+    display:flex;align-items:flex-start;gap:12px;
+    padding:13px 14px;cursor:pointer;
+  }
+  .item-head:hover{background:var(--card-hover);}
+  .check{
+    flex:0 0 auto;width:19px;height:19px;border-radius:5px;
+    border:1.5px solid var(--text-faint);margin-top:2px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;background:transparent;color:transparent;font-size:12px;
+    transition:all .15s;
+  }
+  .item.done .check{background:var(--done);border-color:var(--done);color:#0d1117;}
+  .item-main{flex:1;min-width:0;}
+  .item-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .item-num{font-family:var(--mono);font-size:11px;color:var(--text-faint);}
+  .item-title{font-size:14.5px;font-weight:500;color:var(--text);}
+  .item.done .item-title{color:var(--text-dim);}
+  .item-desc{font-size:13px;color:var(--text-dim);margin-top:4px;line-height:1.55;}
+  .chev{
+    flex:0 0 auto;color:var(--text-faint);font-size:12px;margin-top:4px;
+    transition:transform .2s;
+  }
+  .item.open .chev{transform:rotate(90deg);}
+
+  .item-body{
+    max-height:0;overflow:hidden;transition:max-height .25s ease;
+  }
+  .item.open .item-body{max-height:3000px;}
+  .item-body-inner{padding:0 14px 16px 45px;}
+
+  .note{
+    font-size:13px;color:var(--text-dim);line-height:1.6;margin:0 0 10px;
+  }
+  .note strong{color:var(--text);font-weight:500;}
+
+  .code{
+    background:#0a0e14;border:1px solid var(--border-soft);border-radius:7px;
+    padding:10px 13px;font-family:var(--mono);font-size:12.5px;
+    color:#a5d6ff;white-space:pre-wrap;word-break:break-word;
+    margin:6px 0;line-height:1.6;
+  }
+  .code .kw{color:#ff7b72;}
+  .cmdline{
+    display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-soft);
+    font-size:13px;align-items:baseline;flex-wrap:wrap;
+  }
+  .cmdline:last-child{border-bottom:none;}
+  .cmd{font-family:var(--mono);color:#a5d6ff;font-size:12.5px;flex:0 0 auto;background:#0a0e14;padding:2px 7px;border-radius:5px;border:1px solid var(--border-soft);}
+  .cmd-desc{color:var(--text-dim);font-size:12.5px;line-height:1.5;}
+
+  .subtopic{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border-soft);}
+  .subtopic-title{font-family:var(--mono);font-size:12.5px;color:var(--text);margin-bottom:6px;font-weight:500;}
+
+  .flag{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--git-dim);color:#ffb454;font-size:11.5px;
+    padding:4px 9px;border-radius:6px;margin-top:8px;font-family:var(--sans);
+  }
+
+  .empty-state{
+    text-align:center;padding:60px 20px;color:var(--text-faint);
+    font-size:13.5px;
+  }
+
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+
+  @media(max-width:600px){
+    .item-body-inner{padding-left:14px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="titlebar">
+    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    <span class="filename">calisma-rehberi — Sivas, İnönü Üniversitesi</span>
+  </div>
+
+  <div class="tabbar" id="tabbar">
+    <div class="tab active" data-cat="sql"><span class="tab-dot"></span>sql_notlari.sql<span class="tab-count" id="count-sql"></span></div>
+    <div class="tab" data-cat="git"><span class="tab-dot"></span>git_notlari.sh<span class="tab-count" id="count-git"></span></div>
+    <div class="tab" data-cat="genel"><span class="tab-dot"></span>genel_kavramlar.md<span class="tab-count" id="count-genel"></span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search" placeholder="Bu sekmede ara... (örn. JOIN, stash, REST API)">
+    </div>
+    <button class="toolbar-btn" id="expand-all">Tümünü aç</button>
+    <button class="toolbar-btn" id="collapse-all">Tümünü kapat</button>
+  </div>
+
+  <div class="progress-block">
+    <div class="progress-label">
+      <span id="progress-text">0 / 0 öğrenildi</span>
+      <span id="progress-pct">%0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" data-cat="sql" style="width:0%"></div></div>
+  </div>
+
+  <div id="content"></div>
+
+</div>
+
+<script>
+const DATA = {
+  sql: [
+    {t:"SQL Home / SQL Intro", d:"SQL, veritabanına erişmek ve veriyi yönetmek için kullanılan sorgu dilidir.", body:[
+      {p:"Açılımı: <strong>S</strong>tructured <strong>Q</strong>uery <strong>L</strong>anguage."}
+    ]},
+    {t:"SQL Syntax", d:"SQL komutları genelde İngilizce kelimelere benzeyen anahtar kelimelerden oluşur. Büyük/küçük harf duyarlılığı yoktur.", body:[
+      {p:"En önemli SQL komutları:"},
+      {cmds:[
+        ["SELECT","Veri çeker"],["UPDATE","Veri günceller"],["DELETE","Veri siler"],
+        ["INSERT INTO","Veri ekler"],["CREATE DATABASE","Veritabanı oluşturur"],
+        ["ALTER DATABASE","Veritabanı değiştirir"],["CREATE TABLE","Tablo oluşturur"],
+        ["ALTER TABLE","Tablo değiştirir"],["DROP TABLE","Tablo siler"],
+        ["CREATE INDEX","Index oluşturur"],["DROP INDEX","Index siler"]
+      ]}
+    ]},
+    {t:"SQL SELECT", d:"Tablodan veri çekmek için kullanılır.", body:[
+      {code:"SELECT CustomerName, City\nFROM Customers;"},
+      {p:"Tüm sütunları seçmek için:"},
+      {code:"SELECT * FROM Customers;"}
+    ]},
+    {t:"SQL SELECT DISTINCT", d:"Tekrarlanan değerleri kaldırır. Sadece benzersiz değerleri getirir.", body:[
+      {code:"SELECT DISTINCT Country\nFROM Customers;"}
+    ]},
+    {t:"SQL WHERE", d:"Verileri şarta göre filtreler. WHERE sadece SELECT içinde değil; UPDATE ve DELETE içinde de kullanılır.", body:[
+      {p:"Metinsel değerlerde tek tırnak kullanılır, sayısal değerlerde tırnak gerekmez."},
+      {code:"SELECT * FROM Customers WHERE Country = 'Mexico';"},
+      {code:"SELECT * FROM Customers WHERE CustomerID > 80;"}
+    ]},
+    {t:"SQL ORDER BY", d:"Sonuçları sıralar. Varsayılan sıralama A'dan Z'ye şeklindedir.", body:[
+      {code:"SELECT * FROM Customers\nORDER BY Country;"},
+      {p:"Azalan sıralama:"},
+      {code:"SELECT * FROM Customers\nORDER BY Country DESC;"},
+      {p:"Birden fazla sütuna göre sıralama:"},
+      {code:"SELECT * FROM Customers\nORDER BY Country ASC, CustomerName DESC;"}
+    ]},
+    {t:"SQL AND", d:"Birden fazla şart, hepsi doğruysa kayıt gelir.", body:[
+      {code:"SELECT * FROM Customers\nWHERE Country = 'Germany' AND City = 'Berlin';"}
+    ]},
+    {t:"SQL OR", d:"Şartlardan en az biri doğruysa kayıt gelir.", body:[
+      {code:"SELECT * FROM Customers\nWHERE City = 'Berlin' OR City = 'Adana01';"}
+    ]},
+    {t:"SQL NOT", d:"Şartın tersini alır.", body:[
+      {code:"SELECT * FROM Customers\nWHERE NOT Country = 'Germany';"}
+    ]},
+    {t:"SQL INSERT INTO", d:"Tabloya yeni kayıt ekler.", body:[
+      {p:"Tüm sütunlara değer girilecekse sütun isimleri yazılmadan da olur:"},
+      {code:"INSERT INTO Customers\nVALUES (92, 'Ersin Market', 'Ersin Genc');"}
+    ]},
+    {t:"SQL NULL Values", d:"NULL, boş ya da bilinmeyen değer demektir.", body:[
+      {p:"NULL kontrolünde <strong>\"=\"</strong> kullanılmaz. IS NULL ya da IS NOT NULL kullanılır."},
+      {code:"SELECT * FROM Customers\nWHERE Address IS NULL;"}
+    ]},
+    {t:"SQL UPDATE", d:"Var olan kayıtları günceller.", body:[
+      {p:"<strong>WHERE yazılmazsa tüm tablo güncellenir!</strong> WHERE mutlaka yazılmalı."},
+      {code:"UPDATE Customers\nSET ContactName = 'Ersin', City = 'Malatya'\nWHERE CustomerID = 1;"}
+    ]},
+    {t:"SQL DELETE", d:"Kayıt siler. WHERE yazılmazsa tüm tablo silinebilir.", body:[
+      {code:"DELETE FROM Customers\nWHERE CustomerName = 'Ersin market';"},
+      {p:"Tüm kayıtları silmek için:"},
+      {code:"DELETE FROM Customers;"}
+    ]},
+    {t:"SQL SELECT TOP / LIMIT", d:"Belirli sayıda kayıt getirir. Veritabanına göre yazımı değişir.", body:[
+      {p:"SQL Server:"},{code:"SELECT TOP 3 * FROM Customers;"},
+      {p:"MySQL:"},{code:"SELECT * FROM Customers LIMIT 3;"}
+    ]},
+    {t:"SQL Aggregate Functions", d:"Toplama / özet hesaplama yapan fonksiyonlardır. Genelde COUNT, SUM, AVG, MIN, MAX kullanılır.", body:[
+      {sub:"MIN() — en küçük değeri getirir", code:"SELECT MIN(price) FROM products;"},
+      {sub:"MAX() — en büyük değeri getirir", code:"SELECT MAX(price) FROM Customers;"},
+      {sub:"COUNT() — satır sayısını sayar", code:"SELECT COUNT(CustomerId) FROM Customers;"},
+      {sub:"SUM() — sayısal sütundaki değerleri toplar", code:"SELECT SUM(Quantity) FROM OrderDetails;"},
+      {sub:"AVG() — ortalama hesaplar", code:"SELECT AVG(price) FROM products;"}
+    ]},
+    {t:"SQL LIKE", d:"Metin içinde arama yapmak için kullanılır.", body:[
+      {code:"SELECT * FROM customers\nWHERE customername LIKE 'a%';"},
+      {p:"→ Bu, adı <strong>a ile başlayan</strong> müşterileri getirir."},
+      {p:"→ <strong>'%a'</strong> → adı a ile biten müşteriler."},
+      {p:"→ <strong>'%er%'</strong> → adının içinde \"er\" geçen müşteriler."}
+    ]},
+    {t:"SQL Wildcards", d:"% → sıfır, bir veya daha fazla karakter. _ → tek karakter.", body:[
+      {code:"SELECT * FROM customers\nWHERE city LIKE 'L_n_on';"},
+      {p:"Bu kullanımda her \"_\" tek karakterlik bir boşluğu temsil eder."}
+    ]},
+    {t:"SQL IN", d:"Bir sütunun birden fazla olası değerden birine eşit olmasını kontrol eder.", body:[
+      {code:"SELECT * FROM Customers\nWHERE Country IN ('Türkiye', 'Adana01', 'TR');"},
+      {p:"NOT IN → dışlama yapılır:"},
+      {code:"SELECT * FROM Customers\nWHERE Country NOT IN ('Türkiye', 'Adana01', 'TR');"}
+    ]},
+    {t:"SQL BETWEEN", d:"İki değer arasındaki kayıtları getirir. Başlangıç ve bitiş değerleri genelde dahildir.", body:[
+      {code:"SELECT * FROM products\nWHERE price BETWEEN 10 AND 20;"}
+    ]},
+    {t:"SQL Aliases", d:"Sütuna veya tabloya geçici isim verir. AS kullanılır.", body:[
+      {p:"Sütun alias:"},
+      {code:"SELECT CustomerName AS customer\nFROM Customers;"},
+      {p:"Tablo alias örneği:"},
+      {code:"SELECT c.CustomerName, o.OrderId\nFROM Customers AS c, Orders AS o\nWHERE c.CustomerID = o.CustomerID;"}
+    ]},
+    {t:"SQL JOINS", d:"JOIN, iki veya daha fazla tabloyu ilişkili sütunlara göre birleştirir.", body:[
+      {sub:"INNER JOIN — iki tabloda da eşleşen kayıtları getirir", code:"SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate\nFROM Orders\nINNER JOIN Customers ON Orders.CustomerID = Customers.CustomerID;"},
+      {sub:"LEFT JOIN — sol tablodaki tüm kayıtları getirir, sağda eşleşme varsa ekler", code:"SELECT Customers.CustomerName, Orders.OrderID\nFROM Customers\nLEFT JOIN Orders ON Customers.CustomerID = Orders.CustomerID;"},
+      {sub:"RIGHT JOIN — sağ tablodaki tüm kayıtları getirir, solda eşleşme varsa ekler", code:"SELECT Orders.OrderID, Employees.LastName\nFROM Orders\nRIGHT JOIN Employees ON Orders.EmployeeID = Employees.EmployeeID;"},
+      {sub:"FULL JOIN — sağda veya solda eşleşme olsun olmasın iki taraftaki kayıtları getirir", code:"SELECT Customers.CustomerName, Orders.OrderID\nFROM Customers\nFULL OUTER JOIN Orders ON Customers.CustomerID = Orders.CustomerID;"},
+      {sub:"SELF JOIN — bir tabloyu kendisiyle join etmek; aynı tablodaki kayıtları karşılaştırır", flag:"Bu konuyu tam anlamadım — tekrar çalışılacak"}
+    ]},
+    {t:"SQL UNION", d:"İki sorgunun sonucunu birleştirir. Tekrarları kaldırır.", body:[
+      {code:"SELECT City FROM Customers\nUNION\nSELECT City FROM Suppliers;"}
+    ]},
+    {t:"SQL UNION ALL", d:"İki sorgunun sonucunu birleştirir ama tekrarları silmez.", body:[
+      {code:"SELECT City FROM Customers\nUNION ALL\nSELECT City FROM Suppliers;"}
+    ]},
+    {t:"SQL GROUP BY", d:"Aynı değerlere sahip satırları gruplar. Genelde COUNT, MAX, MIN, SUM, AVG ile beraber kullanılır.", body:[
+      {code:"SELECT Country, COUNT(CustomerID) AS [Number of Customers]\nFROM Customers\nGROUP BY Country;"}
+    ]},
+    {t:"SQL HAVING", d:"WHERE normal satırları filtreler; HAVING gruplanmış sonuçları filtreler.", body:[
+      {code:"SELECT Country, COUNT(CustomerID)\nFROM Customers\nGROUP BY Country\nHAVING COUNT(CustomerID) > 5;"}
+    ]},
+    {t:"SQL EXISTS", d:"Alt sorguda kayıt var mı diye kontrol eder. Varsa TRUE döner.", body:[
+      {p:"Genelde WHERE EXISTS (alt sorgu) şeklinde, bir kaydın başka bir tabloda karşılığı var mı diye bakmak için kullanılır."}
+    ]},
+    {t:"SQL ANY", d:"Alt sorgudan gelen değerlerden herhangi biri koşulu sağlıyorsa çalışır.", body:[
+      {p:"WHERE sütun = ANY (alt sorgu) gibi kullanımlarda, alt sorgunun döndürdüğü değerlerden en az biriyle eşleşme aranır."}
+    ]}
+  ],
+  git: [
+    {t:"Git'in Temel Mantığı", d:"Working Directory → Staging Area → Local Repository → Remote Repository akışı.", body:[
+      {p:"Working Directory (Dosya) → <strong>git add</strong> → Staging Area → <strong>git commit</strong> → Local Repository → <strong>git push</strong> → Remote Repository"},
+      {cmds:[
+        ["git add","Dosya commit'e hazırlanır"],
+        ["git commit","Değişiklik yerel git'e kaydedilir"],
+        ["git push","Yereldeki commit'leri GitHub'a gönderir"],
+        ["git pull","Değişiklikleri kendi bilgisayarına çeker"],
+        ["git --version","Git kurulu mu, kuruluysa hangi sürüm var, gösterir"]
+      ]}
+    ]},
+    {t:"Git Get Started", d:"Bir klasörü Git projesine çevirmek.", body:[
+      {cmds:[
+        ["git init","Bulunduğun klasörü Git projesine çevirir. İçine gizli .git klasörü açılır; git geçmişi ve takip bilgileri burada tutulur"],
+        ["ls -a","Gizli dosyalarla beraber klasörü gösterir; .git klasörünü görmek için kullanılır"]
+      ]}
+    ]},
+    {t:"Git New Files", d:"Yeni dosya oluşturulduğunda Git onu hemen takip etmez, önce durumuna bakılır.", body:[
+      {cmds:[
+        ["ls","Klasördeki dosyaları listeler"],
+        ["git status","Git açısından projenin durumunu gösterir. Yeni dosya varsa genelde untracked files olarak görünür"]
+      ]}
+    ]},
+    {t:"Git Staging", d:"Staging, commit'e girecekleri hazırlama alanıdır.", body:[
+      {cmds:[
+        ["git add index.html","Sadece index.html dosyasını stage alanına alır"],
+        ["git add --all","Tüm değişiklikleri stage alanına alır"],
+        ["git add -A","Yukarıdaki komutla aynı işi yapar"],
+        ["git status","Hangi dosyalar stage edilmiş, hangileri edilmemiş gösterir"],
+        ["git restore --staged index.html","Yanlışlıkla stage edilen dosyayı stage alanından çıkarır ama içeriğini silmez"]
+      ]}
+    ]},
+    {t:"Git Commit", d:"Commit, projenin o anki halinin kayıt noktasıdır.", body:[
+      {cmds:[
+        ["git commit -m \"mesaj\"","Stage alanındaki dosyaları commit olarak kaydeder"],
+        ["git commit -a -m \"mesaj\"","Takip edilen dosyalardaki değişiklikleri direkt commit eder. Yeni oluşturulmuş (untracked) dosyaları otomatik eklemez"],
+        ["git commit","Mesajı terminalde değil editörde yazmanı sağlar"],
+        ["git log","Commit geçmişini gösterir"],
+        ["git commit --allow-empty -m \"Trigger build\"","Hiç dosya değişikliği olmasa bile boş commit oluşturur"],
+        ["git commit --amend -m \"new message\"","Son commit mesajını veya içeriğini düzenlemek için kullanılır"],
+        ["git reset --soft HEAD~1","Son commit'i geri alır ama değişiklikleri kaybetmez, stage alanında bırakır"]
+      ]}
+    ]},
+    {t:"Git Tagging", d:"Tag genelde sürüm işaretlemek için kullanılır.", body:[
+      {cmds:[
+        ["git tag v1.0","Basit tag oluşturur"],
+        ["git tag -a v1.0 -m \"Version 1.0\"","Açıklamalı tag oluşturur"],
+        ["git tag v1.0 <commit-hash>","Belirli bir commit'e tag koyar"],
+        ["git tag","Tüm tagleri listeler"],
+        ["git show v1.0","Tag'in bağlı olduğu commit bilgilerini gösterir"],
+        ["git push origin v1.0","Sadece v1.0 tagini uzak depoya gönderir"],
+        ["git tag -d v1.0","Yerelde tag siler"],
+        ["git push origin --delete tag v1.0","Uzak depodaki tagi siler"]
+      ]}
+    ]},
+    {t:"Git Stash", d:"\"Şimdiki değişiklikleri bir kenara koy, sonra geri al\" demektir. Özellikle başka branch'e geçileceği zaman işe yarar.", body:[
+      {cmds:[
+        ["git stash","Takip edilen dosyalardaki değişiklikleri geçici olarak saklar"],
+        ["git stash -u","Untracked dosyaları da stash'e ekler"],
+        ["git stash push -m \"mesaj\"","Stash'e açıklama ekleyerek kaydeder"],
+        ["git stash show","Son stash'te neler olduğunu özet gösterir"],
+        ["git stash show -p","Stash içeriğini detaylı diff olarak gösterir"],
+        ["git stash apply","Son stash'i geri getirir ama stash listesinden silmez"],
+        ["git stash list","Tüm stash kayıtlarını listeler"],
+        ["git stash pop","Son stash'i geri getirir ve listeden siler"],
+        ["git stash drop stash@{0}","Belirli stash'i siler"],
+        ["git stash clear","Tüm stash'leri siler"],
+        ["git stash branch new-feature stash@{0}","Stash'ten yeni branch oluşturur"]
+      ]}
+    ]},
+    {t:"Git History", d:"Geçmişi inceleme komutları.", body:[
+      {cmds:[
+        ["git log","Commit geçmişini detaylı gösterir"],
+        ["git log --author=\"Ersin\"","Sadece belirli kişilerin commit'lerini gösterir"],
+        ["git log --since=\"2 weeks ago\"","Son 2 haftadaki commit'leri gösterir"],
+        ["git log --oneline","Commit geçmişini tek satırlık kısa özet halinde gösterir"],
+        ["git log --stat","Commit'ler hangi dosyada kaç satır değiştirmiş gösterir"],
+        ["git log --graph --oneline","Branch ve merge geçmişini grafik olarak gösterir"],
+        ["git diff","Henüz commit edilmemiş değişiklikleri gösterir"]
+      ]}
+    ]},
+    {t:"Git Help", d:"Git komutlarının yardım sayfasını açar.", body:[
+      {cmds:[
+        ["git help commit / git commit --help","Commit komutunun detaylı yardımını açar"],
+        ["git help --all","Tüm git komutlarını listeler"],
+        ["git add -h","Kısa yardım gösterir"],
+        ["git help -g","Git rehber konularını gösterir"]
+      ]}
+    ]},
+    {t:"Git Branch", d:"Branch, ana kodu bozmadan ayrı bir çalışma alanı açmaktır.", body:[
+      {cmds:[
+        ["git branch hello-world-images","\"hello-world-images\" adında branch oluşturur"],
+        ["git branch","Branch listesini gösterir. Yanında \"*\" olan, şu an bulunduğun branch'tir"],
+        ["git checkout -b emergency-fix","Yeni branch oluşturur ve direkt ona geçer"],
+        ["git branch -m old-name new-name","Branch adını değiştirir"],
+        ["git branch -d hello-world-images","Merge edilmiş branch'i siler"],
+        ["git branch -D branch-name","Merge edilmemiş olsa bile branch'i zorla siler"],
+        ["git checkout hello-image-world","O branch'e geçer"],
+        ["git switch branch-name","Branch değiştirmek için modern kullanım"]
+      ]}
+    ]},
+    {t:"Git Merge", d:"Merge, bir branch'teki değişiklikleri başka branch ile birleştirmektir.", body:[
+      {cmds:[
+        ["git checkout master","Önce değişikliklerin alınacağı branch'e geçilir"],
+        ["git merge emergency-fix","Bu branch'teki değişiklikler aktif branch'le birleştirilir"],
+        ["git merge --no-ff feature-branch","Fast-forward yapmadan merge commit'i oluşturulur; geçmişte branch'in ayrı olduğu belli kalır"],
+        ["git merge --squash feature-branch","Branch'teki tüm commit'leri tek commit olacak şekilde hazırlar"]
+      ]}
+    ]},
+    {t:"Git Workflow (Temel Akış)", d:"Günlük kullanımda izlenen sıra.", body:[
+      {cmds:[
+        ["1) git status","Durum kontrol edilir"],
+        ["2) git add .","Tüm değişiklikleri stage alanına al"],
+        ["3) git commit -m \"mesaj\"","Commit oluştur"],
+        ["4) git push","Uzak depoya gönder"],
+        ["5) git restore <dosya>","Dosyadaki commit edilmemiş değişiklikleri geri alır"],
+        ["6) git restore --staged <dosya>","Dosyayı stage alanından çıkarır"],
+        ["7) git reset HEAD~1","Son commit'i geri alır"],
+        ["8) git commit --amend","Son commit'i düzeltir"]
+      ]}
+    ]},
+    {t:"GitHub / Remote Başlıkları", d:"GitHub, git depolarını internet üzerinde tutmayı sağlar. Yereldeki repo bilgisayarındadır, GitHub'daki repo uzak depodur.", body:[
+      {p:"Temel akış:"},
+      {code:"git init\ngit add .\ngit commit -m \"first commit\"\ngit remote add origin https://github.com/user/repo.git\ngit push --set-upstream origin main"},
+      {p:"→ main branch'ini GitHub'a gönderir ve bundan sonra git push komutunun nereye gideceğini hatırlatır."}
+    ]},
+    {t:"Git — What is SSH?", d:"SSH, GitHub'a şifre yazmadan güvenli bağlanmak için kullanılır. Özel anahtar sende kalır, public key GitHub'a eklenir.", body:[
+      {cmds:[
+        ["eval $(ssh-agent -s)","SSH agent'ı başlatır"],
+        ["ssh-keygen -t rsa -b 4096 -C \"your@email\"","SSH key üretir"]
+      ]},
+      {flag:"Burayı hiç anlamadım — tekrar çalışılacak"}
+    ]}
+  ],
+  genel: [
+    {t:"Error nedir?", d:"Programın çalışmasını bozan hatadır. Kodda, veritabanında, bağlantıda veya sistemde bir sorun olduğunda ortaya çıkar.", body:[]},
+    {t:"Warning nedir?", d:"Programın çalışmasını tamamen durdurmayan ama dikkat edilmesi gereken uyarıdır.", body:[]},
+    {t:"Stack Trace nedir?", d:"Hatanın nerede ve hangi sırayla oluştuğunu gösteren hata izidir.", body:[]},
+    {t:"Console log nedir?", d:"Kod çalışırken geliştiricinin ekrana bilgi yazdırmasını sağlayan kontrol yöntemidir.", body:[]},
+    {t:"Browser Console Açma", d:"Tarayıcıdaki hata, uyarı ve logların görüldüğü geliştirici panelidir.", body:[]},
+    {t:"Network Tab İnceleme", d:"Tarayıcı ile backend arasındaki istekleri incelemek için kullanılır.", body:[]},
+    {t:"Backend Hata Mesajı Okuma", d:"Sunucu tarafında oluşan hataları anlamak için okunur.", body:[]},
+    {t:"Hata Ekran Görüntüsü Alma", d:"Karşılaşılan hatayı daha sonra incelemek veya başka birine göstermek için ekranın görüntüsünü kaydetmektir.", body:[]},
+    {t:"Hata Raporu Yazma", d:"Bir hatanın düzenli şekilde anlatıldığı kısa açıklamadır.", body:[]},
+    {t:"1. Git / GitHub", d:"Git, projede yapılan değişiklikleri takip eden sürüm kontrol sistemidir. Kodun geçmişini saklar, eski sürümlere dönmeyi sağlar.", body:[
+      {p:"GitHub, Git ile yönetilen projelerin internet üzerinde saklandığı platformdur. Takım çalışmasında herkes kodunu GitHub'a gönderir, değişiklikler takip edilir."},
+      {cmds:[["git init / git add . / git commit -m \"mesaj\" / git push / git pull / git clone","Temel komutlar"]]}
+    ]},
+    {t:"2. Terminal Kullanımı", d:"Terminal, bilgisayara komut yazarak işlem yaptırdığımız ekrandır.", body:[
+      {p:"Dosya oluşturma, klasör gezme, proje çalıştırma, Git komutları, paket kurma gibi işler terminalden yapılabilir."},
+      {cmds:[
+        ["cd","Klasör değiştirir"],["ls / dir","Dosyaları listeler"],
+        ["mkdir","Klasör açar"],["clear / cls","Ekranı temizler"]
+      ]}
+    ]},
+    {t:"3. VS Code / IDE Kullanımı", d:"IDE, kod yazmayı kolaylaştıran geliştirme ortamıdır.", body:[
+      {p:"VS Code, IntelliJ IDEA, NetBeans gibi araçlar IDE örneğidir. Kod renklendirme, hata gösterme, otomatik tamamlama, proje çalıştırma, terminal kullanımı ve eklenti desteği sağlar. Yazılımcının projeyi daha düzenli ve hızlı geliştirmesine yardım eder."}
+    ]},
+    {t:"4. Markdown / README Yazımı", d:"Markdown, basit işaretlerle düzenli yazı yazma biçimidir.", body:[
+      {p:"GitHub'daki README.md dosyaları genelde Markdown ile yazılır. README, projenin ne işe yaradığını, nasıl kurulduğunu, nasıl çalıştırıldığını ve kullanılan teknolojileri anlatır."},
+      {code:"# Başlık\n## Alt Başlık\n- Liste\n`kod`"}
+    ]},
+    {t:"5. Proje Klasör Yapısı Okuma", d:"Bir projeyi anlamak için klasör yapısı incelenir; hangi dosyanın ne işe yaradığı buradan anlaşılır.", body:[
+      {cmds:[
+        ["src","Kaynak kodları"],["resources","Ayar dosyaları"],
+        ["controller","İstekleri karşılayan sınıflar"],["service","İş mantığı"],
+        ["repository","Veritabanı işlemleri"]
+      ]},
+      {p:"Klasör yapısı projeyi düzenli hale getirir."}
+    ]},
+    {t:"6. Frontend / Backend / Database Ayrımı", d:"Frontend kullanıcının gördüğü arayüzdür; Backend arka planda çalışan sistemdir; Database verilerin saklandığı yerdir.", body:[
+      {p:"<strong>Frontend</strong>: HTML, CSS, JavaScript ile yapılır."},
+      {p:"<strong>Backend</strong>: İşlemleri yapar, kuralları uygular, veriyi işler. Java Spring Boot buna örnektir."},
+      {p:"<strong>Database</strong>: PostgreSQL, MySQL, SQLite gibi sistemler kullanılır."}
+    ]},
+    {t:"7. HTTP / REST API Temelleri", d:"HTTP, istemci ile sunucu arasındaki iletişim kuralıdır.", body:[
+      {p:"Tarayıcı veya uygulama sunucuya istek gönderir, sunucu cevap döner. REST API, frontend ile backend'in veri alışverişi yapmasını sağlar."},
+      {cmds:[
+        ["GET","Veri getirir"],["POST","Veri ekler"],
+        ["PUT","Günceller"],["DELETE","Siler"]
+      ]}
+    ]},
+    {t:"8. JSON Mantığı", d:"Sistemler arasında veri taşımak için kullanılan hafif veri formatıdır. Anahtar-değer mantığıyla çalışır.", body:[
+      {p:"Backend ve frontend genelde JSON ile haberleşir. Okuması kolaydır ve çoğu programlama dili destekler."},
+      {code:"{ \"name\": \"Ali\", \"age\": 20 }"},
+      {p:"Burada <strong>name</strong> anahtar, <strong>Ali</strong> değerdir."}
+    ]},
+    {t:"9. Postman ile API Test", d:"Postman, API'leri test etmek için kullanılan araçtır.", body:[
+      {p:"Backend çalışırken istek gönderip cevapları kontrol etmeyi sağlar. Örneğin bir GET isteğiyle veri çekilir, POST isteğiyle yeni kayıt eklenir."},
+      {p:"Status code, response body, header ve hata mesajları Postman üzerinden incelenebilir."}
+    ]},
+    {t:"10. Database / SQL Temelleri", d:"Database, verilerin düzenli şekilde saklandığı sistemdir. SQL, veritabanı üzerinde işlem yapmak için kullanılan sorgu dilidir.", body:[
+      {p:"Tablo, satır ve sütun mantığı vardır."},
+      {cmds:[
+        ["SELECT","Veri getirir"],["INSERT","Veri ekler"],
+        ["UPDATE","Veri günceller"],["DELETE","Veri siler"]
+      ]},
+      {code:"SELECT * FROM users;"}
+    ]},
+    {t:"11. Görev Takip Sistemi", d:"Yapılacak işleri planlamak ve ilerlemeyi takip etmek için kullanılır.", body:[
+      {p:"Trello, Jira, GitHub Issues gibi araçlar örnektir. Görevler genelde \"Yapılacak\", \"Devam Ediyor\", \"Tamamlandı\" şeklinde ayrılır. Takım çalışmasında kimin ne yaptığı daha net görülür."}
+    ]},
+    {t:"12. Clean Code Başlangıcı", d:"Okunabilir, anlaşılır ve düzenli kod yazma yaklaşımıdır.", body:[
+      {p:"Değişken ve metot isimleri anlamlı olmalıdır. Gereksiz tekrar yapılmamalı, kod küçük parçalara ayrılmalıdır. Karmaşık ve uzun metotlardan kaçınılır."},
+      {p:"Amaç sadece çalışan değil, sonradan kolay anlaşılabilen kod yazmaktır."}
+    ]},
+    {t:"13. Debug / Hata Okuma", d:"Kod çalışırken hataları bulma ve düzeltme işlemidir.", body:[
+      {p:"Hata mesajları dikkatli okunmalıdır. Stack trace, hatanın hangi dosyada ve hangi satırda olduğunu gösterir. Console log ile değişkenlerin değeri kontrol edilebilir."},
+      {p:"Hata çözmeden önce mesaj okunur, sonra ilgili satır incelenir."}
+    ]},
+    {t:"14. Siber Güvenlik Farkındalığı", d:"Dijital ortamda güvenli davranmayı bilmektir.", body:[
+      {p:"Güçlü şifre kullanmak, bilinmeyen linklere tıklamamak, kişisel bilgileri paylaşmamak önemlidir. Yazılım geliştirirken kullanıcı verileri korunmalı, şifreler açık şekilde saklanmamalı, yetkisiz erişimlere karşı önlem alınmalıdır."}
+    ]}
+  ]
+};
+
+let progress = {sql:{}, git:{}, genel:{}};
+let activeTab = "sql";
+let openItems = new Set();
+
+async function loadProgress(){
+  try{
+    const r = await window.storage.get('ders-notlari-progress');
+    if(r && r.value){ progress = JSON.parse(r.value); }
+  }catch(e){ /* no saved progress yet */ }
+}
+async function saveProgress(){
+  try{ await window.storage.set('ders-notlari-progress', JSON.stringify(progress)); }
+  catch(e){ /* ignore */ }
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderBody(item){
+  if(!item.body || item.body.length===0) return "";
+  let html = "";
+  item.body.forEach(b=>{
+    if(b.p){ html += `<p class="note">${b.p}</p>`; }
+    if(b.code){ html += `<div class="code">${escapeHtml(b.code)}</div>`; }
+    if(b.cmds){
+      html += `<div>`;
+      b.cmds.forEach(c=>{
+        html += `<div class="cmdline"><span class="cmd">${escapeHtml(c[0])}</span><span class="cmd-desc">${escapeHtml(c[1])}</span></div>`;
+      });
+      html += `</div>`;
+    }
+    if(b.sub){
+      html += `<div class="subtopic"><div class="subtopic-title">${escapeHtml(b.sub)}</div>`;
+      if(b.code){ html += `<div class="code">${escapeHtml(b.code)}</div>`; }
+      if(b.flag){ html += `<div class="flag">🚩 ${escapeHtml(b.flag)}</div>`; }
+      html += `</div>`;
+    }
+    if(b.flag && !b.sub){ html += `<div class="flag">🚩 ${escapeHtml(b.flag)}</div>`; }
+  });
+  return html;
+}
+
+function render(){
+  const cat = activeTab;
+  const items = DATA[cat];
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const container = document.getElementById('content');
+
+  const filtered = items
+    .map((it,idx)=>({it, idx}))
+    .filter(({it})=>{
+      if(!q) return true;
+      const hay = (it.t + " " + it.d + " " + JSON.stringify(it.body||"")).toLowerCase();
+      return hay.includes(q);
+    });
+
+  let html = `<div class="group-title">${cat==='sql'?'SQL Konuları':cat==='git'?'Git Konuları':'Genel Yazılım Kavramları'}</div><div class="list">`;
+
+  if(filtered.length===0){
+    html += `<div class="empty-state">"${escapeHtml(q)}" için sonuç bulunamadı.</div>`;
+  } else {
+    filtered.forEach(({it, idx})=>{
+      const key = idx;
+      const done = !!progress[cat][key];
+      const isOpen = openItems.has(cat+"-"+key);
+      html += `
+      <div class="item ${done?'done':''} ${isOpen?'open':''}" data-key="${key}">
+        <div class="item-head" data-toggle="${key}">
+          <div class="check" data-check="${key}">${done?'✓':''}</div>
+          <div class="item-main">
+            <div class="item-title-row">
+              <span class="item-num">${String(idx+1).padStart(2,'0')}</span>
+              <span class="item-title">${escapeHtml(it.t)}</span>
+            </div>
+            <div class="item-desc">${escapeHtml(it.d)}</div>
+          </div>
+          <div class="chev">▶</div>
+        </div>
+        <div class="item-body"><div class="item-body-inner">${renderBody(it)}</div></div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+
+  container.querySelectorAll('[data-toggle]').forEach(el=>{
+    el.addEventListener('click',(e)=>{
+      if(e.target.closest('[data-check]')) return;
+      const key = el.getAttribute('data-toggle');
+      const id = cat+"-"+key;
+      if(openItems.has(id)) openItems.delete(id); else openItems.add(id);
+      render();
+    });
+  });
+  container.querySelectorAll('[data-check]').forEach(el=>{
+    el.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      const key = el.getAttribute('data-check');
+      progress[cat][key] = !progress[cat][key];
+      saveProgress();
+      render();
+      updateProgressBar();
+    });
+  });
+
+  updateTabCounts();
+  updateProgressBar();
+}
+
+function updateTabCounts(){
+  ["sql","git","genel"].forEach(cat=>{
+    const total = DATA[cat].length;
+    const done = Object.values(progress[cat]).filter(Boolean).length;
+    document.getElementById('count-'+cat).textContent = ` ${done}/${total}`;
+  });
+}
+
+function updateProgressBar(){
+  const cat = activeTab;
+  const total = DATA[cat].length;
+  const done = Object.values(progress[cat]).filter(Boolean).length;
+  const pct = total? Math.round((done/total)*100) : 0;
+  document.getElementById('progress-text').textContent = `${done} / ${total} öğrenildi`;
+  document.getElementById('progress-pct').textContent = `%${pct}`;
+  const fill = document.getElementById('progress-fill');
+  fill.style.width = pct + "%";
+  fill.setAttribute('data-cat', cat);
+}
+
+document.getElementById('tabbar').addEventListener('click',(e)=>{
+  const tab = e.target.closest('.tab');
+  if(!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  activeTab = tab.getAttribute('data-cat');
+  document.getElementById('search').value = "";
+  render();
+});
+
+document.getElementById('search').addEventListener('input', render);
+
+document.getElementById('expand-all').addEventListener('click',()=>{
+  DATA[activeTab].forEach((_,idx)=> openItems.add(activeTab+"-"+idx));
+  render();
+});
+document.getElementById('collapse-all').addEventListener('click',()=>{
+  DATA[activeTab].forEach((_,idx)=> openItems.delete(activeTab+"-"+idx));
+  render();
+});
+
+(async function init(){
+  await loadProgress();
+  render();
+})();
+</script>
+</body>
+</html>
